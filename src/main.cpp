@@ -31,6 +31,7 @@ bool isDeviceOnboarded = false;
 
 // API endpoints
 const char* API_ENDPOINT = "http://192.168.31.156:8000/api/device/onboard";
+const char* Device_update = "http://192.168.31.156:8000/api/device/update";
 const char* INTERNET_CHECK = "http://clients3.google.com/generate_204";
 
 // AP mode IP configuration
@@ -63,7 +64,7 @@ void setup() {
   password = preferences.getString("pass", "");
   customer_uid = preferences.getString("customer_uid", "");
   device_number = preferences.getString("device_number", "");
-  isDeviceOnboarded = preferences.getBool("onboarded", false); // Check if device is already onboarded
+  isDeviceOnboarded = preferences.getBool("onboarded", false);
   preferences.end();
   
   // Check if reset button is pressed during boot
@@ -109,7 +110,7 @@ void setup() {
         // Device is already onboarded, skip API validation
         Serial.println("Device already onboarded. Skipping API validation.");
         validationSuccess = true;
-        blinkRGB(255, 255, 0, 3); // Yellow blink - Already validated
+        blinkRGB(255, 0, 255, 3); // Yellow blink - Already validated
         startSuccessServer();
       } else {
         // First time setup - validate with API
@@ -313,14 +314,19 @@ void startSuccessServer() {
 }
 
 void handleReset() {
-  // Clear stored credentials
+  // Clear stored preferences
   preferences.begin("wifi", false);
   preferences.clear();
   preferences.end();
   
-  // Restart device
+  // Blink red to indicate reset
+  blinkRGB(255, 0, 0, 3);
+
+  // Restart the device to enter AP setup mode
+  delay(1000);
   ESP.restart();
 }
+
 
 bool validateDevice() {
   Serial.println("Validating device...");
