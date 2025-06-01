@@ -12,7 +12,7 @@ void APIClient::setTimeout(int timeout) {
 
 bool APIClient::validateDevice(const String& customer_uid, const String& device_number, 
                               const String& ssid, const String& password) {
-    Serial.println("Validating device...");
+    Serial.println("Validating device with server...");
     
     http.begin(API_ENDPOINT);
     http.addHeader("Content-Type", "application/json");
@@ -44,6 +44,42 @@ bool APIClient::validateDevice(const String& customer_uid, const String& device_
     return false;
 }
 
+bool APIClient::updateDeviceStatus(const String& customer_uid, const String& device_number,
+                                  const SensorConfig& sensorConfig) {
+    Serial.println("Updating device status with sensor data...");
+    
+    http.begin(DEVICE_UPDATE_ENDPOINT);
+    http.addHeader("Content-Type", "application/json");
+    setTimeout(HTTP_TIMEOUT);
+
+    // Create JSON payload with sensor data
+    String json = "{\"uid\":\"" + customer_uid + 
+                  "\",\"device_number\":\"" + device_number + 
+                  "\",\"valve\":" + String(sensorConfig.valve_count) +
+                  ",\"flow_sensor\":" + String(sensorConfig.flow_sensor_count) +
+                  ",\"temp_sensor\":" + String(sensorConfig.temperature, 2) + "}";
+    
+    Serial.println("Sending device update: " + json);
+    
+    int httpCode = http.POST(json);
+    
+    if (httpCode > 0) {
+        String response = http.getString();
+        Serial.print("Update response code: ");
+        Serial.println(httpCode);
+        Serial.println("Response: " + response);
+        
+        http.end();
+        return (httpCode == 200);
+    } else {
+        Serial.print("Device update failed, error: ");
+        Serial.println(http.errorToString(httpCode));
+    }
+    
+    http.end();
+    return false;
+}
+
 bool APIClient::hasInternetConnection() {
     Serial.println("Checking internet connection...");
     
@@ -56,37 +92,4 @@ bool APIClient::hasInternetConnection() {
     
     http.end();
     return (httpCode == 204);
-}
-
-bool APIClient::updateDeviceStatus(const String& customer_uid, const String& device_number, 
-                                   int valve, int flow_sensor, float temp_sensor) {
-    http.begin(DEVICE_UPDATE_ENDPOINT);
-    http.addHeader("Content-Type", "application/json");
-    setTimeout(HTTP_TIMEOUT);
-
-    String json = "{\"uid\":\"" + customer_uid + 
-                  "\",\"device_number\":\"" + device_number + 
-                  "\",\"valve\":" + String(valve) + 
-                  ",\"flow_sensor\":" + String(flow_sensor) + 
-                  ",\"temp_sensor\":" + String(temp_sensor, 2) + "}";
-
-    Serial.println("Sending device update: " + json);
-
-    int httpCode = http.POST(json);
-
-    if (httpCode > 0) {
-        String response = http.getString();
-        Serial.print("Update response code: ");
-        Serial.println(httpCode);
-        Serial.println("Response: " + response);
-
-        http.end();
-        return (httpCode == 200);
-    }
-
-    Serial.print("Update failed, error: ");
-    Serial.println(http.errorToString(httpCode));
-
-    http.end();
-    return false;
 }

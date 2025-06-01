@@ -20,11 +20,12 @@ public:
     void blinkInternetAvailable();
     void blinkValidationSuccess();
     void blinkValidationFailed();
-    void blinkStatusUpdate();
-    void blinkStatusUpdateFailed();
     void blinkConnectionFailed();
     void blinkAPMode();
     void blinkReset();
+    void blinkDeviceUpdate();
+    void blinkDeviceUpdateSuccess();
+    void blinkDeviceUpdateFailed();
 };
 
 #endif

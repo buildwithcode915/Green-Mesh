@@ -57,3 +57,15 @@ void LEDController::blinkAPMode() {
 void LEDController::blinkReset() {
     blinkRGB(255, 0, 0, 3); // Red blink
 }
+
+void LEDController::blinkDeviceUpdate() {
+    blinkRGB(255, 165, 0, 2); // Orange blink - Device update in progress
+}
+
+void LEDController::blinkDeviceUpdateSuccess() {
+    blinkRGB(0, 255, 255, 3); // Cyan blink - Device update successful
+}
+
+void LEDController::blinkDeviceUpdateFailed() {
+    blinkRGB(255, 0, 255, 3); // Magenta blink - Device update failed
+}
