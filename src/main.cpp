@@ -177,12 +177,23 @@ void handleDeviceUpdate() {
     // Get current sensor configuration
     SensorConfig currentSensors = sensorManager.getCurrentConfig();
     
-    if (apiClient.updateDeviceStatus(deviceConfig.customer_uid, deviceConfig.device_number, currentSensors)) {
+    // Update the API call to pass the sensorManager reference for active counts
+    if (apiClient.updateDeviceStatus(deviceConfig.customer_uid, deviceConfig.device_number, 
+                                   currentSensors, &sensorManager)) {
         Serial.println("Device update successful.");
         
         // Save updated sensor configuration
         prefsManager.saveSensorConfig(currentSensors);
         deviceConfig.sensorConfig = currentSensors;
+        
+        // Print detailed status
+        Serial.println("=== Device Status Sent to Server ===");
+        Serial.println("Connected Valves: " + String(currentSensors.valve_count));
+        Serial.println("Active Valves: " + String(sensorManager.getActiveValveCount()));
+        Serial.println("Connected Flow Sensors: " + String(currentSensors.flow_sensor_count));
+        Serial.println("Active Flow Sensors: " + String(sensorManager.getActiveFlowSensorCount()));
+        Serial.println("Temperature: " + String(currentSensors.temperature) + "°C");
+        Serial.println("===================================");
         
         // Indicate successful update
         ledController.setColor(0, 255, 0);  // Green solid color
@@ -206,6 +217,13 @@ void performSensorDetection() {
         // Save sensor configuration
         prefsManager.saveSensorConfig(detectedConfig);
         deviceConfig.sensorConfig = detectedConfig;
+        
+        // Print detection results
+        Serial.println("=== Sensor Detection Results ===");
+        Serial.println("Total Valves Detected: " + String(detectedConfig.valve_count));
+        Serial.println("Total Flow Sensors Detected: " + String(detectedConfig.flow_sensor_count));
+        Serial.println("Temperature Sensor: " + String(detectedConfig.temperature) + "°C");
+        Serial.println("===============================");
         
         // Visual indication of sensor detection
         ledController.blinkRGB(255, 255, 0, 2);  // Yellow blinks for sensor detection

@@ -1,4 +1,5 @@
 #include "api_client.h"
+#include <ArduinoJson.h> // Add ArduinoJson library
 
 APIClient::APIClient() {}
 
@@ -18,15 +19,19 @@ bool APIClient::validateDevice(const String& customer_uid, const String& device_
     http.addHeader("Content-Type", "application/json");
     setTimeout(HTTP_TIMEOUT);
 
-    String json = "{\"uid\":\"" + customer_uid + 
-                  "\",\"device_number\":\"" + device_number + 
-                  "\",\"ssid\":\"" + ssid + 
-                  "\",\"wifi_password\":\"" + password + "\"}";
-    
-    Serial.println("Sending validation request: " + json);
-    
-    int httpCode = http.POST(json);
-    
+    StaticJsonDocument<256> doc; // Adjust size as needed
+    doc["uid"] = customer_uid;
+    doc["device_number"] = device_number;
+    doc["ssid"] = ssid;
+    doc["wifi_password"] = password;
+
+    String jsonPayload;
+    serializeJson(doc, jsonPayload);
+
+    Serial.println("Sending validation request: " + jsonPayload);
+
+    int httpCode = http.POST(jsonPayload);
+
     if (httpCode > 0) {
         String response = http.getString();
         Serial.print("HTTP Response code: ");
@@ -45,24 +50,63 @@ bool APIClient::validateDevice(const String& customer_uid, const String& device_
 }
 
 bool APIClient::updateDeviceStatus(const String& customer_uid, const String& device_number,
-                                  const SensorConfig& sensorConfig) {
-    Serial.println("Updating device status with sensor data...");
+                                  const SensorConfig& sensorConfig, SensorManager* sensorManager) {
+    Serial.println("Updating device status with current sensor data...");
     
     http.begin(DEVICE_UPDATE_ENDPOINT);
     http.addHeader("Content-Type", "application/json");
     setTimeout(HTTP_TIMEOUT);
 
-    // Create JSON payload with sensor data
-    String json = "{\"uid\":\"" + customer_uid + 
-                  "\",\"device_number\":\"" + device_number + 
-                  "\",\"valve\":" + String(sensorConfig.valve_count) +
-                  ",\"flow_sensor\":" + String(sensorConfig.flow_sensor_count) +
-                  ",\"temp_sensor\":" + String(sensorConfig.temperature, 2) + "}";
+    // Get actual active counts instead of total detected counts
+    uint8_t active_valves = 0;
+    uint8_t active_flow_sensors = 0;
     
-    Serial.println("Sending device update: " + json);
-    
-    int httpCode = http.POST(json);
-    
+    if (sensorManager != nullptr) {
+        active_valves = sensorManager->getActiveValveCount();
+        active_flow_sensors = sensorManager->getActiveFlowSensorCount();
+    }
+
+    // Create JSON payload with both connected and active sensor data
+    // StaticJsonDocument<384> doc; // Adjust size as needed
+    // doc["uid"] = customer_uid;
+    // doc["device_number"] = device_number;
+    // doc["valve_connected"] = sensorConfig.valve_count;
+    // doc["valve_active"] = active_valves;
+    // doc["flow_sensor_connected"] = sensorConfig.flow_sensor_count;
+    // doc["flow_sensor_active"] = active_flow_sensors;
+    // doc["temp_sensor"] = serialized(String(sensorConfig.temperature, 2));
+    // doc["temp_sensor_connected"] = sensorConfig.temp_sensor_connected;
+    // doc["timestamp"] = millis();
+
+    StaticJsonDocument<384> doc;
+    doc["uid"] = customer_uid;
+    doc["device_number"] = device_number;
+    doc["valve_connected"] = sensorConfig.valve_count;
+    doc["valve_active"] = active_valves;
+    doc["flow_sensor_connected"] = sensorConfig.flow_sensor_count;
+    doc["flow_sensor_active"] = active_flow_sensors;
+    doc["temp_sensor_connected"] = sensorConfig.temp_sensor_connected;
+
+    if (sensorConfig.temp_sensor_connected) {
+        doc["temp_sensor"] = serialized(String(sensorConfig.temperature, 2));
+    } else {
+        doc["temp_sensor"] = nullptr; 
+    }
+
+    doc["timestamp"] = millis();
+
+
+    String jsonPayload;
+    serializeJson(doc, jsonPayload);
+
+    Serial.println("Sending device update: " + jsonPayload);
+    Serial.println("Connected - Valves: " + String(sensorConfig.valve_count) + 
+                  ", Flow Sensors: " + String(sensorConfig.flow_sensor_count));
+    Serial.println("Active - Valves: " + String(active_valves) + 
+                  ", Flow Sensors: " + String(active_flow_sensors));
+
+    int httpCode = http.POST(jsonPayload);
+
     if (httpCode > 0) {
         String response = http.getString();
         Serial.print("Update response code: ");
@@ -78,6 +122,12 @@ bool APIClient::updateDeviceStatus(const String& customer_uid, const String& dev
     
     http.end();
     return false;
+}
+
+// Overloaded method for backward compatibility
+bool APIClient::updateDeviceStatus(const String& customer_uid, const String& device_number,
+                                  const SensorConfig& sensorConfig) {
+    return updateDeviceStatus(customer_uid, device_number, sensorConfig, nullptr);
 }
 
 bool APIClient::hasInternetConnection() {

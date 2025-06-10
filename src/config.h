@@ -2,7 +2,10 @@
 #define CONFIG_H
 
 // Hardware Configuration
-#define RGB_LED_PIN 8           // Built-in RGB LED on ESP32-C3 DevKitM-1
+#ifndef RGB_LED_PIN
+#define RGB_LED_PIN 8
+#endif
+       // Built-in RGB LED on ESP32-C3 DevKitM-1
 #define NUMPIXELS 1
 #define RESET_BUTTON_PIN 9      // Boot button on ESP32-C3 DevKitM-1
 
@@ -14,7 +17,7 @@
 // Available GPIO pins: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21 (15 pins total)
 // Special functions to consider:
 // - GPIO8: Built-in RGB LED (WS2812) - already used
-// - GPIO9: Boot button - already used
+// - GPIO9: Boot button - already used`
 // - GPIO18, 19: USB D+/D- - can be used but avoid if using USB serial for debugging
 // - GPIO20, 21: I2C SDA/SCL default pins
 // - ADC1 capable pins: GPIO0, 1, 2, 3, 4 (for analog sensors like temperature)

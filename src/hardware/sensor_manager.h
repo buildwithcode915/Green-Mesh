@@ -8,6 +8,7 @@ struct SensorConfig {
     uint8_t valve_count;
     uint8_t flow_sensor_count;
     float temperature;
+    bool temp_sensor_connected;
     bool sensors_detected;
 };
 
@@ -18,11 +19,16 @@ private:
     int flow_sensor_pins[MAX_FLOW_SENSORS];
     int temp_sensor_pin;
     
+    // State tracking arrays
+    bool valve_states[MAX_VALVES];           // Track which valves are currently active
+    bool flow_sensor_active[MAX_FLOW_SENSORS]; // Track which flow sensors are active/connected
+    
     bool detectValves();
     bool detectFlowSensors();
     float readTemperature();
     bool isValveConnected(int pin);
     bool isFlowSensorConnected(int pin);
+    bool isTempSensorConnected(int pin);
 
 public:
     SensorManager();
@@ -39,8 +45,14 @@ public:
     
     // Status methods
     bool areSensorsDetected();
-    uint8_t getValveCount();
-    uint8_t getFlowSensorCount();
+    uint8_t getValveCount();                 // Total connected valves
+    uint8_t getFlowSensorCount();           // Total connected flow sensors
+    
+    // Active state methods - NEW
+    uint8_t getActiveValveCount();          // Currently active/open valves (valves that are open and allowing flow)
+    uint8_t getActiveFlowSensorCount();     // Currently active flow sensors
+    bool isValveActive(uint8_t valve_number);
+    bool isFlowSensorActive(uint8_t sensor_number);
 };
 
 #endif

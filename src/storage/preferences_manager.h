@@ -20,6 +20,8 @@ private:
     Preferences preferences;
     static const char* NAMESPACE;
     static const char* SENSOR_NAMESPACE;
+    static String encryptString(const String& input);
+    static String decryptString(const String& input);
 
 public:
     PreferencesManager();
