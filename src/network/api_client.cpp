@@ -1,5 +1,5 @@
 #include "api_client.h"
-#include <ArduinoJson.h> // Add ArduinoJson library
+#include <ArduinoJson.h>
 
 APIClient::APIClient() {}
 
@@ -66,17 +66,6 @@ bool APIClient::updateDeviceStatus(const String& customer_uid, const String& dev
         active_flow_sensors = sensorManager->getActiveFlowSensorCount();
     }
 
-    // Create JSON payload with both connected and active sensor data
-    // StaticJsonDocument<384> doc; // Adjust size as needed
-    // doc["uid"] = customer_uid;
-    // doc["device_number"] = device_number;
-    // doc["valve_connected"] = sensorConfig.valve_count;
-    // doc["valve_active"] = active_valves;
-    // doc["flow_sensor_connected"] = sensorConfig.flow_sensor_count;
-    // doc["flow_sensor_active"] = active_flow_sensors;
-    // doc["temp_sensor"] = serialized(String(sensorConfig.temperature, 2));
-    // doc["temp_sensor_connected"] = sensorConfig.temp_sensor_connected;
-    // doc["timestamp"] = millis();
 
     StaticJsonDocument<384> doc;
     doc["uid"] = customer_uid;

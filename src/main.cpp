@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <dallasTemperature.h>
+#include <OneWire.h>
+#include <Adafruit_NeoPixel.h>
 #include "config.h"
 #include "hardware/led_controller.h"
 #include "hardware/button_handler.h"
