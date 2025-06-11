@@ -26,7 +26,7 @@ bool ButtonHandler::checkForReset() {
             buttonState = reading;
             if (buttonState) {
                 lastButtonState = reading;
-                return true; // Button was pressed
+                return true;
             }
         }
     }

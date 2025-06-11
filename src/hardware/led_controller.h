@@ -23,9 +23,6 @@ public:
     void blinkConnectionFailed();
     void blinkAPMode();
     void blinkReset();
-    void blinkDeviceUpdate();
-    void blinkDeviceUpdateSuccess();
-    void blinkDeviceUpdateFailed();
 };
 
 #endif

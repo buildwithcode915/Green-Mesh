@@ -1,8 +1,7 @@
 #include "preferences_manager.h"
-#include "mbedtls/aes.h" // Only needed if you implement AES encryption
+#include "mbedtls/aes.h" // Optional, only needed for real encryption
 
 const char* PreferencesManager::NAMESPACE = "wifi";
-const char* PreferencesManager::SENSOR_NAMESPACE = "sensors";
 
 PreferencesManager::PreferencesManager() {}
 
@@ -11,15 +10,13 @@ bool PreferencesManager::loadConfig(DeviceConfig& config) {
 
     config.ssid = preferences.getString("ssid", "");
     String encryptedPass = preferences.getString("pass", "");
-    config.password = decryptString(encryptedPass);  // Decrypt here
+    config.password = decryptString(encryptedPass);
     config.customer_uid = preferences.getString("customer_uid", "");
     config.device_number = preferences.getString("device_number", "");
     config.isOnboarded = preferences.getBool("onboarded", false);
     config.isFirstBoot = preferences.getBool("first_boot", true);
 
     preferences.end();
-
-    loadSensorConfig(config.sensorConfig);
 
     return !config.ssid.isEmpty() && !config.password.isEmpty() &&
            !config.customer_uid.isEmpty() && !config.device_number.isEmpty();
@@ -67,31 +64,6 @@ bool PreferencesManager::saveCredentials(const String& ssid, const String& passw
     return saveConfig(config);
 }
 
-bool PreferencesManager::saveSensorConfig(const SensorConfig& sensorConfig) {
-    preferences.begin(SENSOR_NAMESPACE, false);
-
-    bool success = true;
-    success &= preferences.putUChar("valve_count", sensorConfig.valve_count);
-    success &= preferences.putUChar("flow_count", sensorConfig.flow_sensor_count);
-    success &= preferences.putFloat("temperature", sensorConfig.temperature);
-    success &= preferences.putBool("sensors_detected", sensorConfig.sensors_detected);
-
-    preferences.end();
-    return success;
-}
-
-bool PreferencesManager::loadSensorConfig(SensorConfig& sensorConfig) {
-    preferences.begin(SENSOR_NAMESPACE, true);
-
-    sensorConfig.valve_count = preferences.getUChar("valve_count", 0);
-    sensorConfig.flow_sensor_count = preferences.getUChar("flow_count", 0);
-    sensorConfig.temperature = preferences.getFloat("temperature", 0.0);
-    sensorConfig.sensors_detected = preferences.getBool("sensors_detected", false);
-
-    preferences.end();
-    return sensorConfig.sensors_detected;
-}
-
 bool PreferencesManager::markAsOnboarded() {
     preferences.begin(NAMESPACE, false);
     bool success = preferences.putBool("onboarded", true);
@@ -117,10 +89,6 @@ void PreferencesManager::clearAll() {
     preferences.begin(NAMESPACE, false);
     preferences.clear();
     preferences.end();
-
-    preferences.begin(SENSOR_NAMESPACE, false);
-    preferences.clear();
-    preferences.end();
 }
 
 bool PreferencesManager::hasStoredCredentials() {
@@ -128,14 +96,12 @@ bool PreferencesManager::hasStoredCredentials() {
     return loadConfig(config);
 }
 
-// Dummy placeholder encryption (you can replace with actual AES logic)
+// Dummy placeholder encryption (replace with real encryption if needed)
 String PreferencesManager::encryptString(const String& input) {
-    // You can implement real encryption with mbedtls or base64
     return "enc_" + input;
 }
 
 String PreferencesManager::decryptString(const String& input) {
-    // Strip off prefix for mock decryption
     if (input.startsWith("enc_")) {
         return input.substring(4);
     }
