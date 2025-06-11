@@ -1,11 +1,8 @@
 #include <Arduino.h>
-#include <dallasTemperature.h>
-#include <OneWire.h>
 #include <Adafruit_NeoPixel.h>
 #include "config.h"
 #include "hardware/led_controller.h"
 #include "hardware/button_handler.h"
-#include "hardware/sensor_manager.h"
 #include "storage/preferences_manager.h"
 #include "network/wifi_manager.h"
 #include "network/api_client.h"
@@ -14,7 +11,6 @@
 // Global objects
 LEDController ledController;
 ButtonHandler buttonHandler;
-SensorManager sensorManager;
 PreferencesManager prefsManager;
 WiFiManager wifiManager;
 APIClient apiClient;
@@ -23,15 +19,12 @@ WebServerManager webServer;
 // Device configuration
 DeviceConfig deviceConfig;
 bool validationSuccess = false;
-unsigned long lastUpdateTime = 0;
 
 // Function declarations
 void handleDeviceSetup();
 void handleWiFiConnection();
 void handleDeviceValidation();
-void handleDeviceUpdate();
 void handleResetButton();
-void performSensorDetection();
 void onCredentialsSaved(const String& ssid, const String& password, 
                        const String& customer_uid, const String& device_number);
 
@@ -42,7 +35,6 @@ void setup() {
     // Initialize hardware
     ledController.begin();
     buttonHandler.begin();
-    sensorManager.begin();
     
     // Setup web server callbacks
     webServer.setPreferencesManager(&prefsManager);
@@ -64,9 +56,6 @@ void setup() {
         return;
     }
     
-    // Perform sensor detection on every boot
-    performSensorDetection();
-    
     // Try to connect to stored WiFi
     handleWiFiConnection();
 }
@@ -85,15 +74,7 @@ void loop() {
             ESP.restart();
         }
     }
-    
-    // Periodic device updates (only after successful onboarding)
-    if (validationSuccess && millis() - lastUpdateTime > DEVICE_UPDATE_INTERVAL) {
-        Serial.println("Performing periodic device update...");
-        sensorManager.getCurrentTemperature();  // Update temperature reading
-        handleDeviceUpdate();
-        lastUpdateTime = millis();
-    }
-    
+
     delay(100);  // Small delay to prevent watchdog issues
 }
 
@@ -128,11 +109,9 @@ void handleWiFiConnection() {
             Serial.println("Internet connection verified.");
             ledController.blinkInternetAvailable();
             
-            // Decide between validation or update based on first boot status
+            // Proceed with onboarding
             if (deviceConfig.isFirstBoot || !deviceConfig.isOnboarded) {
                 handleDeviceValidation();
-            } else {
-                handleDeviceUpdate();
             }
         } else {
             Serial.println("No internet connection available.");
@@ -162,77 +141,12 @@ void handleDeviceValidation() {
         ledController.blinkValidationSuccess();
         Serial.println("Device validation successful!");
         
-        // Perform initial device update with sensor data
-        handleDeviceUpdate();
-        
         // Start success server to display status to user
         webServer.startSuccessMode(deviceConfig, wifiManager.getLocalIP());
     } else {
         Serial.println("Device validation failed.");
         ledController.blinkValidationFailed();
         handleDeviceSetup(); // Return to AP mode if validation fails
-    }
-}
-
-void handleDeviceUpdate() {
-    Serial.println("Updating device status with current sensor data...");
-    
-    // Get current sensor configuration
-    SensorConfig currentSensors = sensorManager.getCurrentConfig();
-    
-    // Update the API call to pass the sensorManager reference for active counts
-    if (apiClient.updateDeviceStatus(deviceConfig.customer_uid, deviceConfig.device_number, 
-                                   currentSensors, &sensorManager)) {
-        Serial.println("Device update successful.");
-        
-        // Save updated sensor configuration
-        prefsManager.saveSensorConfig(currentSensors);
-        deviceConfig.sensorConfig = currentSensors;
-        
-        // Print detailed status
-        Serial.println("=== Device Status Sent to Server ===");
-        Serial.println("Connected Valves: " + String(currentSensors.valve_count));
-        Serial.println("Active Valves: " + String(sensorManager.getActiveValveCount()));
-        Serial.println("Connected Flow Sensors: " + String(currentSensors.flow_sensor_count));
-        Serial.println("Active Flow Sensors: " + String(sensorManager.getActiveFlowSensorCount()));
-        Serial.println("Temperature: " + String(currentSensors.temperature) + "°C");
-        Serial.println("===================================");
-        
-        // Indicate successful update
-        ledController.setColor(0, 255, 0);  // Green solid color
-        delay(1000);
-        ledController.clear();
-    } else {
-        Serial.println("Device update failed.");
-        ledController.blinkConnectionFailed();
-    }
-}
-
-void performSensorDetection() {
-    Serial.println("Starting sensor detection process...");
-    
-    if (sensorManager.detectAllSensors()) {
-        Serial.println("Sensor detection completed successfully.");
-        
-        // Get detected configuration
-        SensorConfig detectedConfig = sensorManager.getCurrentConfig();
-        
-        // Save sensor configuration
-        prefsManager.saveSensorConfig(detectedConfig);
-        deviceConfig.sensorConfig = detectedConfig;
-        
-        // Print detection results
-        Serial.println("=== Sensor Detection Results ===");
-        Serial.println("Total Valves Detected: " + String(detectedConfig.valve_count));
-        Serial.println("Total Flow Sensors Detected: " + String(detectedConfig.flow_sensor_count));
-        Serial.println("Temperature Sensor: " + String(detectedConfig.temperature) + "°C");
-        Serial.println("===============================");
-        
-        // Visual indication of sensor detection
-        ledController.blinkRGB(255, 255, 0, 2);  // Yellow blinks for sensor detection
-    } else {
-        Serial.println("No sensors detected or detection failed.");
-        ledController.blinkRGB(255, 165, 0, 2);  // Orange blinks for no sensors
     }
 }
 
