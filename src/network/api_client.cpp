@@ -48,3 +48,24 @@ bool APIClient::validateDevice(const String& customer_uid, const String& device_
     http.end();
     return false;
 }
+
+bool APIClient::hasInternetConnection() {
+    Serial.println("Checking internet connectivity...");
+    
+    HTTPClient testHttp;
+    testHttp.begin(CONNECTIVITY_CHECK_URL);
+    testHttp.setTimeout(5000);
+    
+    int httpCode = testHttp.GET();
+    testHttp.end();
+    
+    if (httpCode > 0) {
+        Serial.print("Internet connectivity check - HTTP Response code: ");
+        Serial.println(httpCode);
+        return (httpCode == 200);
+    } else {
+        Serial.print("Internet connectivity check failed, error: ");
+        Serial.println(testHttp.errorToString(httpCode));
+        return false;
+    }
+}

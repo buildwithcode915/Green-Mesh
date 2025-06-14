@@ -13,7 +13,7 @@
 
 #define VALVE_PINS {2, 3, 4, 5}
 #define FLOW_SENSOR_PINS {6, 7, 10, 18}
-#define TEMP_SENSOR_PIN 8
+#define TEMP_SENSOR_PIN 1
 
 #define ONE_WIRE_BUS TEMP_SENSOR_PIN
 
@@ -21,6 +21,10 @@
 #define AP_SSID "Green Mesh"
 #define AP_PASSWORD "Admin@123456"
 #define DNS_PORT 53
+
+// API Configuration
+#define API_ENDPOINT "http://192.168.31.156:8000/api/device/onboard"
+#define CONNECTIVITY_CHECK_URL "http://httpbin.org/get"
 
 // Network Timeouts
 #define HTTP_TIMEOUT 10000
