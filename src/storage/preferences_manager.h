@@ -9,24 +9,26 @@ struct DeviceConfig {
     String password;
     String customer_uid;
     String device_number;
-    int valve;
-    int flow_sensor;
-    float temp_sensor;
     bool isOnboarded;
+    bool isFirstBoot;
 };
 
 class PreferencesManager {
 private:
     Preferences preferences;
     static const char* NAMESPACE;
+    static String encryptString(const String& input);
+    static String decryptString(const String& input);
 
 public:
     PreferencesManager();
     bool loadConfig(DeviceConfig& config);
     bool saveConfig(const DeviceConfig& config);
     bool saveCredentials(const String& ssid, const String& password, 
-                        const String& customer_uid, const String& device_number);
+                         const String& customer_uid, const String& device_number);
     bool markAsOnboarded();
+    bool markFirstBootComplete();
+    bool isFirstBoot();
     void clearAll();
     bool hasStoredCredentials();
 };

@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "perviouscode": "cpp"
+        "perviouscode": "cpp",
+        "cmath": "cpp"
     }
 }

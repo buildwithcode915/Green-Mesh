@@ -1,4 +1,5 @@
 #include "api_client.h"
+#include <ArduinoJson.h>
 
 APIClient::APIClient() {}
 
@@ -12,21 +13,25 @@ void APIClient::setTimeout(int timeout) {
 
 bool APIClient::validateDevice(const String& customer_uid, const String& device_number, 
                               const String& ssid, const String& password) {
-    Serial.println("Validating device...");
+    Serial.println("Validating device with server...");
     
     http.begin(API_ENDPOINT);
     http.addHeader("Content-Type", "application/json");
     setTimeout(HTTP_TIMEOUT);
 
-    String json = "{\"uid\":\"" + customer_uid + 
-                  "\",\"device_number\":\"" + device_number + 
-                  "\",\"ssid\":\"" + ssid + 
-                  "\",\"wifi_password\":\"" + password + "\"}";
-    
-    Serial.println("Sending validation request: " + json);
-    
-    int httpCode = http.POST(json);
-    
+    StaticJsonDocument<256> doc; // Adjust size as needed
+    doc["uid"] = customer_uid;
+    doc["device_number"] = device_number;
+    doc["ssid"] = ssid;
+    doc["wifi_password"] = password;
+
+    String jsonPayload;
+    serializeJson(doc, jsonPayload);
+
+    Serial.println("Sending validation request: " + jsonPayload);
+
+    int httpCode = http.POST(jsonPayload);
+
     if (httpCode > 0) {
         String response = http.getString();
         Serial.print("HTTP Response code: ");
@@ -45,48 +50,22 @@ bool APIClient::validateDevice(const String& customer_uid, const String& device_
 }
 
 bool APIClient::hasInternetConnection() {
-    Serial.println("Checking internet connection...");
+    Serial.println("Checking internet connectivity...");
     
-    http.begin(INTERNET_CHECK_URL);
-    setTimeout(HTTP_TIMEOUT);
+    HTTPClient testHttp;
+    testHttp.begin(CONNECTIVITY_CHECK_URL);
+    testHttp.setTimeout(5000);
     
-    int httpCode = http.GET();
-    Serial.print("Internet check response: ");
-    Serial.println(httpCode);
+    int httpCode = testHttp.GET();
+    testHttp.end();
     
-    http.end();
-    return (httpCode == 204);
-}
-
-bool APIClient::updateDeviceStatus(const String& customer_uid, const String& device_number, 
-                                   int valve, int flow_sensor, float temp_sensor) {
-    http.begin(DEVICE_UPDATE_ENDPOINT);
-    http.addHeader("Content-Type", "application/json");
-    setTimeout(HTTP_TIMEOUT);
-
-    String json = "{\"uid\":\"" + customer_uid + 
-                  "\",\"device_number\":\"" + device_number + 
-                  "\",\"valve\":" + String(valve) + 
-                  ",\"flow_sensor\":" + String(flow_sensor) + 
-                  ",\"temp_sensor\":" + String(temp_sensor, 2) + "}";
-
-    Serial.println("Sending device update: " + json);
-
-    int httpCode = http.POST(json);
-
     if (httpCode > 0) {
-        String response = http.getString();
-        Serial.print("Update response code: ");
+        Serial.print("Internet connectivity check - HTTP Response code: ");
         Serial.println(httpCode);
-        Serial.println("Response: " + response);
-
-        http.end();
         return (httpCode == 200);
+    } else {
+        Serial.print("Internet connectivity check failed, error: ");
+        Serial.println(testHttp.errorToString(httpCode));
+        return false;
     }
-
-    Serial.print("Update failed, error: ");
-    Serial.println(http.errorToString(httpCode));
-
-    http.end();
-    return false;
 }

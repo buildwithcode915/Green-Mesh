@@ -5,6 +5,9 @@
 #include <Arduino.h>
 #include "config.h"
 
+// Forward declaration to avoid circular dependency
+class SensorManager;
+
 class APIClient {
 private:
     HTTPClient http;
@@ -15,10 +18,8 @@ public:
     
     bool validateDevice(const String& customer_uid, const String& device_number, 
                        const String& ssid, const String& password);
+    
     bool hasInternetConnection();
-    bool updateDeviceStatus(const String& customer_uid, const String& device_number, 
-                        int valve, int flow_sensor, float temp_sensor);
-
     
 private:
     void setTimeout(int timeout);
