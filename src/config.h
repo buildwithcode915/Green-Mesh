@@ -23,8 +23,17 @@
 #define DNS_PORT 53
 
 // API Configuration
-#define API_ENDPOINT "http://192.168.31.156:8000/api/device/onboard"
+#define API_ENDPOINT "http://127.0.0.1:8000//api/device/onboard"
 #define CONNECTIVITY_CHECK_URL "http://httpbin.org/get"
+#define DEVICE_STATUS_BASE_URL "http://127.0.0.1:8000//api/uid/device-status?device_number="
+
+// MQTT Configuration
+#define MQTT_BROKER "90fee3b7e91445c59e86c74d7c7                                                            03685.s1.eu.hivemq.cloud"
+#define MQTT_PORT 8883
+#define MQTT_USER "navdeep"
+#define MQTT_PASSWORD "Raushan@434"
+#define MQTT_BASE_TOPIC "/greenmesh"
+
 
 // Network Timeouts
 #define HTTP_TIMEOUT 10000
