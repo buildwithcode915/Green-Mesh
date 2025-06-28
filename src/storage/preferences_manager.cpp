@@ -112,3 +112,18 @@ String PreferencesManager::decryptString(const String& input) {
     }
     return input;
 }
+
+String PreferencesManager::getDeviceNumber() {
+    preferences.begin(NAMESPACE, true);
+    String deviceNumber = preferences.getString("device_number", "");
+    preferences.end();
+    return deviceNumber;
+}
+
+String PreferencesManager::getCustomerUID() {
+    preferences.begin(NAMESPACE, true);
+    String customerUID = preferences.getString("customer_uid", "");
+    preferences.end();
+    return customerUID;
+}
+

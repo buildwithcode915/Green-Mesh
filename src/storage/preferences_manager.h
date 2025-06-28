@@ -31,6 +31,11 @@ public:
     bool isFirstBoot();
     void clearAll();
     bool hasStoredCredentials();
+    String getDeviceNumber();
+    String getCustomerUID();
+
 };
+
+
 
 #endif
