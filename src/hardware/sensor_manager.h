@@ -6,6 +6,7 @@
 class SensorManager {
 public:
     void begin();
+    bool isTemperatureSensorConnected();
     void readFlowRates(float rates[]);
     float readTemperature();
 };

@@ -19,7 +19,7 @@ bool APIClient::validateDevice(const String& customer_uid, const String& device_
     http.addHeader("Content-Type", "application/json");
     setTimeout(HTTP_TIMEOUT);
 
-    StaticJsonDocument<256> doc; // Adjust size as needed
+    StaticJsonDocument<256> doc;
     doc["uid"] = customer_uid;
     doc["device_number"] = device_number;
     doc["ssid"] = ssid;

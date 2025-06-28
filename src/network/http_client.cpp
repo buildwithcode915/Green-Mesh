@@ -1,6 +1,7 @@
 #include "http_client.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 void HTTPClientManager::sendSensorData(const String& deviceNumber, float flows[], int count, float temperature) {
     if (WiFi.status() == WL_CONNECTED) {
@@ -24,4 +25,28 @@ void HTTPClientManager::sendSensorData(const String& deviceNumber, float flows[]
 
         http.end();
     }
+}
+
+void HTTPClientManager::sendHardwareStatus(const String& deviceNumber, const HardwareStatus& status) {
+    StaticJsonDocument<512> doc;
+    doc["device_number"] = deviceNumber;
+
+    JsonArray valveArray = doc.createNestedArray("valves");
+    for (int i = 0; i < MAX_VALVES; i++) valveArray.add(status.valve_ok[i]);
+
+    JsonArray flowArray = doc.createNestedArray("flow_sensors");
+    for (int i = 0; i < MAX_FLOW_SENSORS; i++) flowArray.add(status.flow_ok[i]);
+
+    doc["temperature_sensor"] = status.temp_ok;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    HTTPClient http;
+    http.begin("http://192.168.31.156:8000/api/device/health-report");
+    http.addHeader("Content-Type", "application/json");
+
+    int httpCode = http.POST(payload);
+    Serial.printf("Hardware status sent (code %d)\n", httpCode);
+    http.end();
 }

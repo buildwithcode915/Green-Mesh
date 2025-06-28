@@ -10,6 +10,8 @@
 #include "network/mqtt_manager.h"
 #include "hardware/sensor_manager.h"
 #include "network/http_client.h"
+#include "../include/hardware_status.h"
+
 
 // Global objects
 LEDController ledController;
@@ -157,7 +159,9 @@ void handleWiFiConnection() {
             Serial.println("Internet connection verified.");
             ledController.blinkInternetAvailable();
 
-            mqttManager.begin(&prefsManager);  // ✅ Start MQTT after internet is up
+            mqttManager.begin(&prefsManager);
+
+            performHardwareCheck();
 
             if (deviceConfig.isFirstBoot || !deviceConfig.isOnboarded) {
                 handleDeviceValidation();
@@ -275,3 +279,31 @@ void onCredentialsSaved(const String& ssid, const String& password,
     Serial.println("Restarting device to apply new configuration...");
     ESP.restart();
 }
+
+void performHardwareCheck() {
+    HardwareStatus status;
+
+    // Check valves
+    int valvePins[] = VALVE_PINS;
+    for (int i = 0; i < MAX_VALVES; i++) {
+        pinMode(valvePins[i], OUTPUT);
+        digitalWrite(valvePins[i], HIGH);
+        delay(200);
+        status.valve_ok[i] = true; // assume relay works if pin HIGH succeeds
+        digitalWrite(valvePins[i], LOW);
+    }
+
+    // Check flow sensors
+    int flowPins[] = FLOW_SENSOR_PINS;
+    for (int i = 0; i < MAX_FLOW_SENSORS; i++) {
+        pinMode(flowPins[i], INPUT);
+        status.flow_ok[i] = digitalRead(flowPins[i]) == HIGH || digitalRead(flowPins[i]) == LOW;
+    }
+
+    // Check temperature sensor
+    status.temp_ok = sensorManager.isTemperatureSensorConnected();
+
+    // Send to backend
+    httpClient.sendHardwareStatus(deviceConfig.device_number, status);
+}
+

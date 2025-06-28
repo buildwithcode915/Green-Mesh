@@ -41,3 +41,9 @@ float SensorManager::readTemperature() {
     sensors.requestTemperatures();
     return sensors.getTempCByIndex(0);
 }
+
+bool SensorManager::isTemperatureSensorConnected() {
+    sensors.requestTemperatures();
+    float temp = sensors.getTempCByIndex(0);
+    return (temp != DEVICE_DISCONNECTED_C && temp > -55 && temp < 125);
+}
